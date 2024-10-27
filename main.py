@@ -4,8 +4,12 @@ from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import asyncio
+from dotenv import load_dotenv
+import os
 
-api = ''
+load_dotenv()
+api = os.getenv('API_TOKEN')
+
 bot = Bot(token=api)
 dp = Dispatcher(bot, storage=MemoryStorage())
 kb = ReplyKeyboardMarkup()
@@ -44,21 +48,19 @@ async def get_formulas(call):
     await call.message.answer('10 х вес (кг) + 6,25 x рост (см) – 5 х возраст (г) + 5')
     await call.answer()
 
-@dp.message_handler(text='Информация')
-async def info(message):
-    await message.answer('Бот поможет следить за калориями v.1.0', reply_markup=kb)
-
 
 @dp.callback_query_handler(text='Calories')
 async def set_age(call):
-    await call.message.answer('Привет я бот помощник и я помогу тебе считать калории!')
+    await call.message.answer('Введите свой возраст')
     await call.answer()
-
-
-@dp.message_handler(text='Рассчитать')
-async def set_growth(message):
-    await message.answer('Введите свой возраст:', reply_markup=kb)
     await UserState.age.set()
+
+
+@dp.message_handler(state=UserState.age)
+async def set_growth(message, state):
+    await state.update_data(age=message.text)
+    await message.answer("Введите свой рост:")
+    await UserState.growth.set()
 
 
 @dp.message_handler(state=UserState.growth)
